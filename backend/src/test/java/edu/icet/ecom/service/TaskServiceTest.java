@@ -43,7 +43,7 @@ class TaskServiceTest {
 
     @Test
     void createTask_ShouldReturnTaskResponse() {
-        // Given
+
         CreateTaskRequest request = new CreateTaskRequest("Test Task", "Test Description");
         Task task = Task.builder()
                 .title("Test Task")
@@ -67,10 +67,10 @@ class TaskServiceTest {
         when(taskRepository.save(task)).thenReturn(savedTask);
         when(modelMapper.map(savedTask, TaskResponse.class)).thenReturn(expectedResponse);
 
-        // When
+
         TaskResponse response = taskService.createTask(request);
 
-        // Then
+
         assertNotNull(response);
         assertEquals(1L, response.getId());
         assertEquals("Test Task", response.getTitle());
@@ -84,10 +84,10 @@ class TaskServiceTest {
 
     @Test
     void createTask_ShouldThrowIllegalArgumentException_WhenTitleIsNull() {
-        // Given
+
         CreateTaskRequest request = new CreateTaskRequest(null, "Test Description");
 
-        // When & Then
+
         IllegalArgumentException exception = assertThrows(IllegalArgumentException.class,
             () -> taskService.createTask(request));
 
@@ -97,10 +97,10 @@ class TaskServiceTest {
 
     @Test
     void createTask_ShouldThrowIllegalArgumentException_WhenTitleIsEmpty() {
-        // Given
+
         CreateTaskRequest request = new CreateTaskRequest("   ", "Test Description");
 
-        // When & Then
+
         IllegalArgumentException exception = assertThrows(IllegalArgumentException.class,
             () -> taskService.createTask(request));
 
@@ -110,14 +110,14 @@ class TaskServiceTest {
 
     @Test
     void createTask_ShouldThrowTaskCreationException_WhenDatabaseError() {
-        // Given
+
         CreateTaskRequest request = new CreateTaskRequest("Test Task", "Test Description");
         Task task = Task.builder().title("Test Task").description("Test Description").build();
 
         when(modelMapper.map(request, Task.class)).thenReturn(task);
         when(taskRepository.save(task)).thenThrow(new DataAccessException("Database error") {});
 
-        // When & Then
+
         TaskCreationException exception = assertThrows(TaskCreationException.class,
             () -> taskService.createTask(request));
 
@@ -127,7 +127,7 @@ class TaskServiceTest {
 
     @Test
     void getRecentUncompletedTasks_ShouldReturnTop5Tasks() {
-        // Given
+
         Task task1 = Task.builder()
                 .id(1L)
                 .title("Task 1")
@@ -164,10 +164,10 @@ class TaskServiceTest {
         when(modelMapper.map(task1, TaskResponse.class)).thenReturn(response1);
         when(modelMapper.map(task2, TaskResponse.class)).thenReturn(response2);
 
-        // When
+
         List<TaskResponse> responses = taskService.getRecentUncompletedTasks();
 
-        // Then
+
         assertEquals(2, responses.size());
         assertEquals("Task 1", responses.get(0).getTitle());
         assertEquals("Task 2", responses.get(1).getTitle());
@@ -179,7 +179,7 @@ class TaskServiceTest {
 
     @Test
     void completeTask_ShouldMarkTaskAsCompleted() {
-        // Given
+
         Long taskId = 1L;
         Task task = Task.builder()
                 .id(taskId)
@@ -206,10 +206,10 @@ class TaskServiceTest {
         when(taskRepository.save(task)).thenReturn(completedTask);
         when(modelMapper.map(completedTask, TaskResponse.class)).thenReturn(expectedResponse);
 
-        // When
+
         TaskResponse response = taskService.completeTask(taskId);
 
-        // Then
+
         assertTrue(response.getCompleted());
         verify(taskRepository).findById(taskId);
         verify(taskRepository).save(task);
@@ -218,11 +218,11 @@ class TaskServiceTest {
 
     @Test
     void completeTask_ShouldThrowTaskNotFoundException_WhenTaskNotFound() {
-        // Given
+
         Long taskId = 1L;
         when(taskRepository.findById(taskId)).thenReturn(Optional.empty());
 
-        // When & Then
+
         TaskNotFoundException exception = assertThrows(TaskNotFoundException.class,
             () -> taskService.completeTask(taskId));
 
@@ -234,7 +234,7 @@ class TaskServiceTest {
 
     @Test
     void completeTask_ShouldThrowIllegalArgumentException_WhenIdIsNull() {
-        // When & Then
+
         IllegalArgumentException exception = assertThrows(IllegalArgumentException.class,
             () -> taskService.completeTask(null));
 
@@ -244,7 +244,7 @@ class TaskServiceTest {
 
     @Test
     void completeTask_ShouldThrowIllegalArgumentException_WhenIdIsNegative() {
-        // When & Then
+
         IllegalArgumentException exception = assertThrows(IllegalArgumentException.class,
             () -> taskService.completeTask(-1L));
 
@@ -254,7 +254,7 @@ class TaskServiceTest {
 
     @Test
     void completeTask_ShouldReturnSameResponse_WhenTaskAlreadyCompleted() {
-        // Given
+
         Long taskId = 1L;
         Task alreadyCompletedTask = Task.builder()
                 .id(taskId)
@@ -273,10 +273,10 @@ class TaskServiceTest {
         when(taskRepository.findById(taskId)).thenReturn(Optional.of(alreadyCompletedTask));
         when(modelMapper.map(alreadyCompletedTask, TaskResponse.class)).thenReturn(expectedResponse);
 
-        // When
+
         TaskResponse response = taskService.completeTask(taskId);
 
-        // Then
+
         assertTrue(response.getCompleted());
         verify(taskRepository).findById(taskId);
         verify(taskRepository, never()).save(any()); // Should not save since already completed

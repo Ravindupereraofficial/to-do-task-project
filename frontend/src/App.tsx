@@ -26,7 +26,6 @@ const App: React.FC = () => {
 
   const showError = (message: string, type: 'error' | 'warning' | 'info' = 'error') => {
     setError({ message, type });
-    // Auto-hide error after 5 seconds
     setTimeout(() => setError(null), 5000);
   };
 

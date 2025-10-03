@@ -4,19 +4,16 @@ import { taskService } from './services/taskService';
 import type { Task, CreateTaskRequest } from './services/taskService';
 
 const TodoApp: React.FC = () => {
-  // Tasks from backend API
   const [displayedTasks, setDisplayedTasks] = useState<Task[]>([]);
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  // Edit mode state
   const [editingTaskId, setEditingTaskId] = useState<number | null>(null);
   const [editTitle, setEditTitle] = useState('');
   const [editDescription, setEditDescription] = useState('');
 
-  // Fetch tasks from backend on component mount
   useEffect(() => {
     fetchTasks();
   }, []);
@@ -154,7 +151,6 @@ const TodoApp: React.FC = () => {
         {displayedTasks.map((task) => (
           <div key={task.id} className="task-card">
             {editingTaskId === task.id ? (
-              // Edit mode
               <div className="edit-form">
                 <input
                   type="text"
@@ -190,7 +186,6 @@ const TodoApp: React.FC = () => {
                 </div>
               </div>
             ) : (
-              // View mode
               <>
                 <div className="task-content" onClick={() => handleEditTask(task)}>
                   <h3>{task.title}</h3>

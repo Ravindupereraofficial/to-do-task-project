@@ -124,7 +124,7 @@ public class TaskServiceImpl implements TaskService {
             Task task = taskRepository.findById(id)
                     .orElseThrow(() -> new TaskNotFoundException(id));
 
-            // Update task fields
+
             task.setTitle(request.getTitle().trim());
             task.setDescription(request.getDescription() != null ? request.getDescription().trim() : null);
 

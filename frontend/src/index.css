@@ -24,7 +24,6 @@ html, body {
   width: 100%;
 }
 
-/* Scrollbar styling */
 ::-webkit-scrollbar {
   width: 8px;
 }

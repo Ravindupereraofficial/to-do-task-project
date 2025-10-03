@@ -46,7 +46,7 @@ class TaskIntegrationTest {
 
     @Test
     void shouldCreateAndRetrieveTasks() throws Exception {
-        // Create a task
+
         CreateTaskRequest request = new CreateTaskRequest("Integration Test Task", "Testing with MySQL");
 
         String createResponse = mockMvc.perform(post("/api/tasks")
@@ -60,18 +60,18 @@ class TaskIntegrationTest {
 
         TaskResponse createdTask = objectMapper.readValue(createResponse, TaskResponse.class);
 
-        // Retrieve recent tasks
+
         mockMvc.perform(get("/api/tasks/recent"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$[0].title").value("Integration Test Task"))
                 .andExpect(jsonPath("$[0].completed").value(false));
 
-        // Complete the task
+
         mockMvc.perform(put("/api/tasks/{id}/complete", createdTask.getId()))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.completed").value(true));
 
-        // Verify task no longer appears in recent uncompleted tasks
+
         mockMvc.perform(get("/api/tasks/recent"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.length()").value(0));

@@ -25,13 +25,10 @@ class ModelMapperIntegrationTest {
 
     @Test
     void shouldMapCreateTaskRequestToTask() {
-        // Given
         CreateTaskRequest request = new CreateTaskRequest("Test Task", "Test Description");
 
-        // When
         Task task = modelMapper.map(request, Task.class);
 
-        // Then
         assertNotNull(task);
         assertEquals("Test Task", task.getTitle());
         assertEquals("Test Description", task.getDescription());
@@ -41,7 +38,6 @@ class ModelMapperIntegrationTest {
 
     @Test
     void shouldMapTaskToTaskResponse() {
-        // Given
         Task task = Task.builder()
                 .id(1L)
                 .title("Test Task")
@@ -50,10 +46,8 @@ class ModelMapperIntegrationTest {
                 .completed(false)
                 .build();
 
-        // When
         TaskResponse response = modelMapper.map(task, TaskResponse.class);
 
-        // Then
         assertNotNull(response);
         assertEquals(1L, response.getId());
         assertEquals("Test Task", response.getTitle());

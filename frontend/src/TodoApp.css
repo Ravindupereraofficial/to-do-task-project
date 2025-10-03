@@ -209,7 +209,6 @@
   transform: translateY(1px);
 }
 
-/* Edit form styles */
 .edit-form {
   width: 100%;
   display: flex;
@@ -323,7 +322,6 @@
   line-height: 1.4;
 }
 
-/* Responsive design */
 @media (max-width: 768px) {
   .todo-container {
     flex-direction: column;

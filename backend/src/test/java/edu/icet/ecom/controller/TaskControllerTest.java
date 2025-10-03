@@ -35,7 +35,7 @@ class TaskControllerTest {
 
     @Test
     void createTask_ShouldReturn201_WhenValidRequest() throws Exception {
-        // Given
+
         CreateTaskRequest request = new CreateTaskRequest("Test Task", "Test Description");
         TaskResponse response = TaskResponse.builder()
                 .id(1L)
@@ -47,7 +47,7 @@ class TaskControllerTest {
 
         when(taskService.createTask(any(CreateTaskRequest.class))).thenReturn(response);
 
-        // When & Then
+
         mockMvc.perform(post("/api/tasks")
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(objectMapper.writeValueAsString(request)))
@@ -60,10 +60,10 @@ class TaskControllerTest {
 
     @Test
     void createTask_ShouldReturn400_WhenTitleIsBlank() throws Exception {
-        // Given
+
         CreateTaskRequest request = new CreateTaskRequest("", "Test Description");
 
-        // When & Then
+
         mockMvc.perform(post("/api/tasks")
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(objectMapper.writeValueAsString(request)))
@@ -72,7 +72,7 @@ class TaskControllerTest {
 
     @Test
     void getRecentTasks_ShouldReturnTasks() throws Exception {
-        // Given
+
         List<TaskResponse> tasks = Arrays.asList(
                 TaskResponse.builder()
                         .id(1L)
@@ -92,7 +92,7 @@ class TaskControllerTest {
 
         when(taskService.getRecentUncompletedTasks()).thenReturn(tasks);
 
-        // When & Then
+
         mockMvc.perform(get("/api/tasks/recent"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.length()").value(2))
@@ -102,7 +102,7 @@ class TaskControllerTest {
 
     @Test
     void completeTask_ShouldReturn200_WhenTaskExists() throws Exception {
-        // Given
+
         Long taskId = 1L;
         TaskResponse response = TaskResponse.builder()
                 .id(taskId)
@@ -114,7 +114,7 @@ class TaskControllerTest {
 
         when(taskService.completeTask(eq(taskId))).thenReturn(response);
 
-        // When & Then
+
         mockMvc.perform(put("/api/tasks/{id}/complete", taskId))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.id").value(1))
@@ -123,11 +123,11 @@ class TaskControllerTest {
 
     @Test
     void completeTask_ShouldReturn404_WhenTaskNotFound() throws Exception {
-        // Given
+
         Long taskId = 999L;
         when(taskService.completeTask(eq(taskId))).thenThrow(new RuntimeException("Task not found"));
 
-        // When & Then
+
         mockMvc.perform(put("/api/tasks/{id}/complete", taskId))
                 .andExpect(status().isNotFound());
     }

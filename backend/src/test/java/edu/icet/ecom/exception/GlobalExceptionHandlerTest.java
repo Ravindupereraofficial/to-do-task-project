@@ -32,12 +32,12 @@ class GlobalExceptionHandlerTest {
 
     @Test
     void shouldHandleTaskNotFoundException() throws Exception {
-        // Given
+
         Long taskId = 999L;
         when(taskService.completeTask(eq(taskId)))
                 .thenThrow(new TaskNotFoundException(taskId));
 
-        // When & Then
+
         mockMvc.perform(put("/api/tasks/{id}/complete", taskId))
                 .andExpect(status().isNotFound())
                 .andExpect(jsonPath("$.error").value("Task Not Found"))
@@ -49,12 +49,12 @@ class GlobalExceptionHandlerTest {
 
     @Test
     void shouldHandleTaskCreationException() throws Exception {
-        // Given
+
         CreateTaskRequest request = new CreateTaskRequest("Test Task", "Test Description");
         when(taskService.createTask(any(CreateTaskRequest.class)))
                 .thenThrow(new TaskCreationException("Database connection failed"));
 
-        // When & Then
+
         mockMvc.perform(post("/api/tasks")
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(objectMapper.writeValueAsString(request)))
@@ -68,10 +68,10 @@ class GlobalExceptionHandlerTest {
 
     @Test
     void shouldHandleValidationException() throws Exception {
-        // Given - Invalid request with blank title
+
         CreateTaskRequest request = new CreateTaskRequest("", "Test Description");
 
-        // When & Then
+
         mockMvc.perform(post("/api/tasks")
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(objectMapper.writeValueAsString(request)))
@@ -85,11 +85,11 @@ class GlobalExceptionHandlerTest {
 
     @Test
     void shouldHandleDataAccessException() throws Exception {
-        // Given
+
         when(taskService.getRecentUncompletedTasks())
                 .thenThrow(new DataAccessException("Database connection lost") {});
 
-        // When & Then
+
         mockMvc.perform(get("/api/tasks/recent"))
                 .andExpect(status().isInternalServerError())
                 .andExpect(jsonPath("$.error").value("Database Error"))
@@ -101,12 +101,12 @@ class GlobalExceptionHandlerTest {
 
     @Test
     void shouldHandleIllegalArgumentException() throws Exception {
-        // Given
+
         Long invalidId = -1L;
         when(taskService.completeTask(eq(invalidId)))
                 .thenThrow(new IllegalArgumentException("Task ID must be a positive number"));
 
-        // When & Then
+
         mockMvc.perform(put("/api/tasks/{id}/complete", invalidId))
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.error").value("Invalid Argument"))
@@ -118,11 +118,11 @@ class GlobalExceptionHandlerTest {
 
     @Test
     void shouldHandleGenericException() throws Exception {
-        // Given
+
         when(taskService.getRecentUncompletedTasks())
                 .thenThrow(new RuntimeException("Unexpected error occurred"));
 
-        // When & Then
+
         mockMvc.perform(get("/api/tasks/recent"))
                 .andExpect(status().isInternalServerError())
                 .andExpect(jsonPath("$.error").value("Internal Server Error"))
