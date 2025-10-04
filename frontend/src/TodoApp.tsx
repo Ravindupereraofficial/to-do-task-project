@@ -9,10 +9,7 @@ const TodoApp: React.FC = () => {
   const [description, setDescription] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-
-  const [editingTaskId, setEditingTaskId] = useState<number | null>(null);
-  const [editTitle, setEditTitle] = useState('');
-  const [editDescription, setEditDescription] = useState('');
+  const [showAddModal, setShowAddModal] = useState(false);
 
   useEffect(() => {
     fetchTasks();
@@ -47,6 +44,7 @@ const TodoApp: React.FC = () => {
       setTitle('');
       setDescription('');
       setError(null);
+      setShowAddModal(false);
     } catch (err: any) {
       setError(err.message || 'Failed to create task');
       console.error('Error creating task:', err);
@@ -69,40 +67,20 @@ const TodoApp: React.FC = () => {
     }
   };
 
-  const handleEditTask = (task: Task) => {
-    setEditingTaskId(task.id);
-    setEditTitle(task.title);
-    setEditDescription(task.description);
+  const formatDate = (dateString: string) => {
+    const date = new Date(dateString);
+    return date.toLocaleDateString('en-US', { 
+      month: 'short', 
+      day: 'numeric', 
+      hour: '2-digit', 
+      minute: '2-digit',
+      hour12: true 
+    });
   };
 
-  const handleSaveEdit = async () => {
-    if (!editTitle.trim() || editingTaskId === null) return;
-
-    try {
-      setLoading(true);
-      const updateRequest: CreateTaskRequest = {
-        title: editTitle.trim(),
-        description: editDescription.trim()
-      };
-
-      await taskService.updateTask(editingTaskId, updateRequest);
-      await fetchTasks(); // Refresh the task list
-      setEditingTaskId(null);
-      setEditTitle('');
-      setEditDescription('');
-      setError(null);
-    } catch (err: any) {
-      setError(err.message || 'Failed to update task');
-      console.error('Error updating task:', err);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const handleCancelEdit = () => {
-    setEditingTaskId(null);
-    setEditTitle('');
-    setEditDescription('');
+  const getCardColor = (index: number) => {
+    const colors = ['#6366f1', '#8b5cf6', '#06b6d4', '#10b981', '#f59e0b', '#ef4444'];
+    return colors[index % colors.length];
   };
 
   if (loading && displayedTasks.length === 0) {
@@ -115,101 +93,38 @@ const TodoApp: React.FC = () => {
 
   return (
     <div className="todo-container">
-      <div className="left-panel">
-        <h2>Add a Task</h2>
-        {error && <div className="error-message">{error}</div>}
-        <div className="form-group">
-          <label>Title</label>
-          <input
-            type="text"
-            value={title}
-            onChange={(e) => setTitle(e.target.value)}
-            placeholder="Enter task title"
-            disabled={loading}
-          />
+      <div className="header">
+        <div className="header-left">
+          <div className="app-icon">🌟</div>
+          <h1>My Tasks</h1>
         </div>
-        <div className="form-group">
-          <label>Description</label>
-          <textarea
-            value={description}
-            onChange={(e) => setDescription(e.target.value)}
-            placeholder="Enter task description"
-            rows={4}
-            disabled={loading}
-          />
-        </div>
-        <button
-          className="add-button"
-          onClick={handleAddTask}
-          disabled={loading || !title.trim()}
+        <button 
+          className="add-task-button"
+          onClick={() => setShowAddModal(true)}
         >
-          {loading ? 'Adding...' : 'Add'}
+          + Add Task
         </button>
       </div>
 
-      <div className="right-panel">
-        {displayedTasks.map((task) => (
-          <div key={task.id} className="task-card">
-            {editingTaskId === task.id ? (
-              <div className="edit-form">
-                <input
-                  type="text"
-                  value={editTitle}
-                  onChange={(e) => setEditTitle(e.target.value)}
-                  className="edit-title-input"
-                  placeholder="Task title"
-                  disabled={loading}
-                />
-                <textarea
-                  value={editDescription}
-                  onChange={(e) => setEditDescription(e.target.value)}
-                  className="edit-description-input"
-                  placeholder="Task description"
-                  rows={2}
-                  disabled={loading}
-                />
-                <div className="edit-actions">
-                  <button
-                    className="save-button"
-                    onClick={handleSaveEdit}
-                    disabled={loading || !editTitle.trim()}
-                  >
-                    {loading ? 'Saving...' : 'Save'}
-                  </button>
-                  <button
-                    className="cancel-button"
-                    onClick={handleCancelEdit}
-                    disabled={loading}
-                  >
-                    Cancel
-                  </button>
-                </div>
+      <div className="tasks-grid">
+        {displayedTasks.map((task, index) => (
+          <div key={task.id} className="task-card" style={{ borderTopColor: getCardColor(index) }}>
+            <div className="task-content">
+              <h3>{task.title}</h3>
+              <p>{task.description}</p>
+              <div className="task-meta">
+                <span className="task-date">
+                  🕒 {formatDate(task.createdAt)}
+                </span>
               </div>
-            ) : (
-              <>
-                <div className="task-content" onClick={() => handleEditTask(task)}>
-                  <h3>{task.title}</h3>
-                  <p>{task.description}</p>
-                </div>
-                <div className="task-actions">
-                  <button
-                    className="edit-button"
-                    onClick={() => handleEditTask(task)}
-                    title="Edit task"
-                    disabled={loading}
-                  >
-                    ✏️
-                  </button>
-                  <button
-                    className="done-button"
-                    onClick={() => handleMarkDone(task.id)}
-                    disabled={loading}
-                  >
-                    {loading ? 'Done...' : 'Done'}
-                  </button>
-                </div>
-              </>
-            )}
+            </div>
+            <button
+              className="check-button"
+              onClick={() => handleMarkDone(task.id)}
+              disabled={loading}
+            >
+              ✓
+            </button>
           </div>
         ))}
 
@@ -221,6 +136,60 @@ const TodoApp: React.FC = () => {
           </div>
         )}
       </div>
+
+      {/* Add Task Modal */}
+      {showAddModal && (
+        <div className="modal-overlay" onClick={() => setShowAddModal(false)}>
+          <div className="modal-content" onClick={(e) => e.stopPropagation()}>
+            <div className="modal-header">
+              <h2>Add a Task</h2>
+              <button 
+                className="close-button" 
+                onClick={() => setShowAddModal(false)}
+              >
+                ×
+              </button>
+            </div>
+            {error && <div className="error-message">{error}</div>}
+            <div className="form-group">
+              <label>Title</label>
+              <input
+                type="text"
+                value={title}
+                onChange={(e) => setTitle(e.target.value)}
+                placeholder="Enter task title"
+                disabled={loading}
+              />
+            </div>
+            <div className="form-group">
+              <label>Description</label>
+              <textarea
+                value={description}
+                onChange={(e) => setDescription(e.target.value)}
+                placeholder="Enter task description"
+                rows={4}
+                disabled={loading}
+              />
+            </div>
+            <div className="modal-actions">
+              <button
+                className="cancel-button"
+                onClick={() => setShowAddModal(false)}
+                disabled={loading}
+              >
+                Cancel
+              </button>
+              <button
+                className="add-button"
+                onClick={handleAddTask}
+                disabled={loading || !title.trim()}
+              >
+                {loading ? 'Adding...' : 'Add Task'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

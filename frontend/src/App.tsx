@@ -1,68 +1,39 @@
 import React, { useState, useEffect } from 'react';
-import { FiPlus, FiCheck, FiClock, FiAlertCircle, FiX } from 'react-icons/fi';
-import './App.css';
 import { taskService } from './services/taskService';
 import type { Task, CreateTaskRequest } from './services/taskService';
-
-interface ErrorState {
-  message: string;
-  type: 'error' | 'warning' | 'info';
-}
+import './App.css';
 
 const App: React.FC = () => {
   const [tasks, setTasks] = useState<Task[]>([]);
-  const [isFormOpen, setIsFormOpen] = useState(false);
-  const [newTask, setNewTask] = useState<CreateTaskRequest>({
-    title: '',
-    description: ''
-  });
+  const [newTask, setNewTask] = useState<CreateTaskRequest>({ title: '', description: '' });
   const [loading, setLoading] = useState(false);
   const [initialLoading, setInitialLoading] = useState(true);
-  const [error, setError] = useState<ErrorState | null>(null);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
+    const fetchTasks = async () => {
+      try {
+        const fetched = await taskService.getAllTasks();
+        setTasks(fetched);
+      } catch (e: any) {
+        setError(e.message || 'Failed to load tasks');
+      } finally {
+        setInitialLoading(false);
+      }
+    };
     fetchTasks();
   }, []);
 
-  const showError = (message: string, type: 'error' | 'warning' | 'info' = 'error') => {
-    setError({ message, type });
-    setTimeout(() => setError(null), 5000);
-  };
-
-  const fetchTasks = async () => {
-    try {
-      const fetchedTasks = await taskService.getAllTasks();
-      setTasks(fetchedTasks);
-      setError(null);
-    } catch (error: any) {
-      console.error('Error fetching tasks:', error);
-      if (error.status === 0) {
-        showError(error.message, 'warning');
-      } else {
-        showError(`Failed to fetch tasks: ${error.message}`);
-      }
-    } finally {
-      setInitialLoading(false);
-    }
-  };
-
   const createTask = async () => {
-    if (!newTask.title.trim()) {
-      showError('Please enter a task title.', 'warning');
-      return;
-    }
-
+    if (!newTask.title.trim()) return;
     setLoading(true);
     try {
-      const createdTask = await taskService.createTask(newTask);
-      setTasks([createdTask, ...tasks]);
+      const created = await taskService.createTask(newTask);
+      setTasks(prev => [created, ...prev]);
       setNewTask({ title: '', description: '' });
-      setIsFormOpen(false);
       setError(null);
-      showError('Task created successfully!', 'info');
-    } catch (error: any) {
-      console.error('Error creating task:', error);
-      showError(`Failed to create task: ${error.message}`);
+    } catch (e: any) {
+      setError(e.message || 'Failed to create task');
     } finally {
       setLoading(false);
     }
@@ -70,211 +41,81 @@ const App: React.FC = () => {
 
   const completeTask = async (id: number) => {
     try {
-      const updatedTask = await taskService.completeTask(id);
-      setTasks(tasks.map(task =>
-        task.id === id ? updatedTask : task
-      ));
-      setError(null);
-      showError('Task completed!', 'info');
-    } catch (error: any) {
-      console.error('Error completing task:', error);
-      showError(`Failed to complete task: ${error.message}`);
+      await taskService.completeTask(id);
+      // Remove the completed task from the list instead of updating it
+      setTasks(prev => prev.filter(t => t.id !== id));
+    } catch (e: any) {
+      setError(e.message || 'Failed to complete task');
     }
   };
 
-  const formatDate = (dateString: string) => {
-    try {
-      const date = new Date(dateString);
-      return date.toLocaleDateString('en-US', {
-        month: 'short',
-        day: 'numeric',
-        hour: '2-digit',
-        minute: '2-digit'
-      });
-    } catch (error) {
-      return 'Invalid date';
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+    if (e.key === 'Enter' && !e.shiftKey) {
+      e.preventDefault();
+      createTask();
     }
   };
 
-  const handleKeyPress = (event: React.KeyboardEvent, action: () => void) => {
-    if (event.key === 'Enter') {
-      action();
-    }
-  };
-
-  const closeForm = () => {
-    setIsFormOpen(false);
-    setNewTask({ title: '', description: '' });
-  };
-
-  if (initialLoading) {
-    return (
-      <div className="app">
-        <div className="background-gradient"></div>
-        <div className="loading-container">
-          <div className="loading-spinner"></div>
-          <p>Loading tasks...</p>
-        </div>
-      </div>
-    );
-  }
+  // Filter to show only incomplete tasks and limit to 5
+  const visibleTasks = tasks.filter(task => !task.completed).slice(0, 5);
 
   return (
-    <div className="app">
-      <div className="background-gradient"></div>
-
-      {/* Error/Success notification */}
-      {error && (
-        <div className={`notification ${error.type}`}>
-          <div className="notification-content">
-            <FiAlertCircle size={16} />
-            <span>{error.message}</span>
-            <button
-              className="notification-close"
-              onClick={() => setError(null)}
-              aria-label="Close notification"
-            >
-              <FiX size={16} />
-            </button>
+    <div className="page-wrapper">
+      <div className="app-container">
+        <div className="left-panel">
+          <h2 className="panel-title">Add a Task</h2>
+          <div className="form-group">
+            <input
+              className="text-input"
+              placeholder="Title"
+              value={newTask.title}
+              maxLength={100}
+              onChange={e => setNewTask({ ...newTask, title: e.target.value })}
+              onKeyDown={handleKeyDown}
+            />
           </div>
-        </div>
-      )}
-
-      <div className="container">
-        <header className="header">
-          <div className="header-content">
-            <h1 className="title">
-              <span className="title-icon">✨</span>
-              My Tasks
-            </h1>
-            <p className="subtitle">Stay organized and productive</p>
+          <div className="form-group">
+            <textarea
+              className="text-area"
+              placeholder="Description"
+              value={newTask.description}
+              maxLength={500}
+              rows={5}
+              onChange={e => setNewTask({ ...newTask, description: e.target.value })}
+              onKeyDown={handleKeyDown}
+            />
           </div>
-          
           <button
-            className="add-task-btn"
-            onClick={() => setIsFormOpen(true)}
-            aria-label="Add new task"
+            className="add-btn"
+            disabled={!newTask.title.trim() || loading}
+            onClick={createTask}
           >
-            <FiPlus size={20} />
-            Add Task
+            {loading ? 'Adding...' : 'Add'}
           </button>
-        </header>
-
-        {isFormOpen && (
-          <div
-            className="form-overlay"
-            onClick={closeForm}
-            role="dialog"
-            aria-labelledby="form-title"
-            aria-modal="true"
-          >
-            <div
-              className="task-form"
-              onClick={(e) => e.stopPropagation()}
-            >
-              <h3 id="form-title">Add a New Task</h3>
-              <input
-                type="text"
-                placeholder="Task title..."
-                value={newTask.title}
-                onChange={(e) => setNewTask({ ...newTask, title: e.target.value })}
-                onKeyPress={(e) => handleKeyPress(e, createTask)}
-                className="form-input"
-                autoFocus
-                maxLength={100}
-                aria-label="Task title"
-                required
-              />
-              <textarea
-                placeholder="Description (optional)..."
-                value={newTask.description}
-                onChange={(e) => setNewTask({ ...newTask, description: e.target.value })}
-                className="form-textarea"
-                rows={3}
-                maxLength={500}
-                aria-label="Task description"
-              />
-              <div className="form-actions">
-                <button
-                  type="button"
-                  onClick={closeForm}
-                  className="btn-cancel"
-                  disabled={loading}
-                >
-                  Cancel
-                </button>
-                <button
-                  type="button"
-                  onClick={createTask}
-                  disabled={loading || !newTask.title.trim()}
-                  className="btn-create"
-                >
-                  {loading ? (
-                    <>
-                      <div className="button-spinner"></div>
-                      Creating...
-                    </>
-                  ) : (
-                    'Create Task'
-                  )}
-                </button>
-              </div>
-            </div>
-          </div>
-        )}
-
-        <div className="tasks-container">
-          {tasks.length === 0 ? (
-            <div className="empty-state">
-              <div className="empty-icon">📝</div>
-              <h3>No tasks yet</h3>
-              <p>Create your first task to get started!</p>
-              <button
-                className="empty-state-btn"
-                onClick={() => setIsFormOpen(true)}
-              >
-                <FiPlus size={16} />
-                Create your first task
-              </button>
-            </div>
+          {error && <div className="error-msg" role="alert">{error}</div>}
+        </div>
+        <div className="divider" aria-hidden="true" />
+        <div className="right-panel">
+          {initialLoading ? (
+            <div className="loading-placeholder">Loading tasks...</div>
+          ) : visibleTasks.length === 0 ? (
+            <div className="empty">No tasks yet.</div>
           ) : (
-            <div className="tasks-grid">
-              {tasks.map((task) => (
-                <div
-                  key={task.id}
-                  className={`task-card ${task.completed ? 'completed' : ''}`}
-                  role="article"
-                  aria-label={`Task: ${task.title}`}
-                >
-                  <div className="task-header">
+            <div className="task-list">
+              {visibleTasks.map(task => (
+                <div key={task.id} className="task-item">
+                  <div className="task-texts">
                     <h3 className="task-title">{task.title}</h3>
-                    <button
-                      className={`complete-btn ${task.completed ? 'completed' : ''}`}
-                      onClick={() => completeTask(task.id)}
-                      disabled={task.completed}
-                      aria-label={task.completed ? 'Task completed' : 'Mark task as complete'}
-                      title={task.completed ? 'Task completed' : 'Mark as complete'}
-                    >
-                      <FiCheck size={16} />
-                    </button>
-                  </div>
-                  
-                  {task.description && (
-                    <p className="task-description">{task.description}</p>
-                  )}
-                  
-                  <div className="task-footer">
-                    <div className="task-date">
-                      <FiClock size={14} />
-                      {formatDate(task.createdAt)}
-                    </div>
-                    {task.completed && (
-                      <span className="completed-badge">
-                        <FiCheck size={12} />
-                        Done
-                      </span>
+                    {task.description && (
+                      <p className="task-desc">{task.description}</p>
                     )}
                   </div>
+                  <button
+                    className="done-btn"
+                    onClick={() => completeTask(task.id)}
+                  >
+                    Done
+                  </button>
                 </div>
               ))}
             </div>
